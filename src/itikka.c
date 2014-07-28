@@ -65,25 +65,9 @@ static inline uint8_t exists_in_history(Itikka * itikka,
 	return 0;
 }
 
-static inline ItikkaHistoryItem * get_from_history(Itikka * itikka,
-                                        itikka_checksum checksum)
-{
-	size_t i;
-
-	for(i = 0; i < itikka->history_size; i++) {
-		if(checksum == itikka->history[i].checksum)
-			return &itikka->history[i];
-	}
-
-	return NULL;
-}
-
 static inline void add_history(Itikka * itikka, itikka_checksum checksum)
 {
-	ItikkaHistoryItem * item = get_from_history(itikka, checksum);
-
-	if(!item)
-		item = oldest_history_item(itikka);
+	ItikkaHistoryItem * item = oldest_history_item(itikka);
 
 	item->time = itikka->milliseconds();
 	item->checksum = checksum;
