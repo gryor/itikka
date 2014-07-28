@@ -25,7 +25,7 @@ void itikka_free(Itikka * itikka)
 	free(itikka);
 }
 
-static inline size_t oldest_history_item(Itikka * itikka)
+static inline ItikkaHistoryItem * oldest_history_item(Itikka * itikka)
 {
 	size_t i, oldest = 0;
 	itikka_time time = -1;
@@ -48,28 +48,45 @@ static inline size_t oldest_history_item(Itikka * itikka)
 		}
 	}
 
-	return oldest;
+	return &itikka->history[oldest];
 }
 
 static inline uint8_t exists_in_history(Itikka * itikka,
                                         itikka_checksum checksum)
 {
-	ItikkaHistoryItem * history;
+	size_t i;
 	itikka_time time = itikka->milliseconds();
 
-	for(history = &itikka->history; history < itikka->history_size; history++) {
-		if(checksum == history->checksum && time < itikka->history_timeout)
+	for(i = 0; i < itikka->history_size; i++) {
+		if(checksum == itikka->history[i].checksum && (time - itikka->history[i].time) < itikka->history_timeout)
 			return 1;
 	}
 
 	return 0;
 }
 
+static inline ItikkaHistoryItem * get_from_history(Itikka * itikka,
+                                        itikka_checksum checksum)
+{
+	size_t i;
+
+	for(i = 0; i < itikka->history_size; i++) {
+		if(checksum == itikka->history[i].checksum)
+			return &itikka->history[i];
+	}
+
+	return NULL;
+}
+
 static inline void add_history(Itikka * itikka, itikka_checksum checksum)
 {
-	ItikkaHistoryItem * oldest = &itikka->history[oldest_history_item(itikka)];
-	oldest->time = itikka->milliseconds();
-	oldest->checksum = checksum;
+	ItikkaHistoryItem * item = get_from_history(itikka, checksum);
+
+	if(!item)
+		item = oldest_history_item(itikka);
+
+	item->time = itikka->milliseconds();
+	item->checksum = checksum;
 }
 
 uint8_t itikka_send(Itikka * itikka, const uint8_t * content,
